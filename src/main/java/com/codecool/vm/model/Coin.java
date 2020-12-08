@@ -1,4 +1,4 @@
-package com.codecool.vm;
+package com.codecool.vm.model;
 
 public class Coin {
 
@@ -7,7 +7,7 @@ public class Coin {
     private double radius;
 
 
-    Coin(){
+    public Coin(){
 
     }
 

@@ -1,6 +1,6 @@
-import com.codecool.vm.Menu;
-import com.codecool.vm.VendingMachine;
-import com.codecool.vm.VerifiedCoins;
+import com.codecool.vm.view.Menu;
+import com.codecool.vm.controller.VendingMachine;
+import com.codecool.vm.model.VerifiedCoins;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 

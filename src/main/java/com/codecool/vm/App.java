@@ -1,5 +1,8 @@
 package com.codecool.vm;
 
+import com.codecool.vm.controller.VendingMachine;
+import com.codecool.vm.view.Menu;
+
 import java.util.Scanner;
 
 public class App {

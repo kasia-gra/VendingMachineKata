@@ -1,6 +1,4 @@
-package com.codecool.vm;
-
-import java.util.Arrays;
+package com.codecool.vm.model;
 
 public enum VerifiedCoins {
 

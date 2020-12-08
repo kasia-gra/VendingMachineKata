@@ -1,4 +1,10 @@
-package com.codecool.vm;
+package com.codecool.vm.controller;
+
+import com.codecool.vm.Helper;
+import com.codecool.vm.model.Coin;
+import com.codecool.vm.model.Products;
+import com.codecool.vm.model.VerifiedCoins;
+import com.codecool.vm.view.Menu;
 
 import java.util.*;
 

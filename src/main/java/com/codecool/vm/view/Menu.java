@@ -1,6 +1,7 @@
-package com.codecool.vm;
+package com.codecool.vm.view;
 
-import java.util.InputMismatchException;
+import com.codecool.vm.model.Products;
+
 import java.util.Scanner;
 
 public class Menu {

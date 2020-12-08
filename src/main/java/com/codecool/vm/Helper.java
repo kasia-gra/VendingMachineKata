@@ -1,7 +1,8 @@
 package com.codecool.vm;
 
-import java.io.ObjectStreamException;
-import java.util.HashMap;
+import com.codecool.vm.model.Products;
+import com.codecool.vm.model.VerifiedCoins;
+
 import java.util.Map;
 
 public class Helper {
@@ -31,18 +32,21 @@ public class Helper {
     public String formatProductsDisplay(Map<Products, Integer> originalMap) {
         StringBuilder sb = new StringBuilder();
         sb.append("* PRODUCTS: ");
+        int button = 1;
         for (Map.Entry <Products, Integer> entry : originalMap.entrySet()) {
-            sb.append(" " +entry.getKey() + ": " + entry.getValue() + " ");
+            sb.append(" " + button + "-" + entry.getKey() + "(" +  convertCentsToDollars(entry.getKey().getPrice())+", " + entry.getValue() + " piece(s)) ");
+            button++;
         }
         return sb.toString();
     }
 
     public String formatMoneyDisplay(Map<VerifiedCoins, Integer> originalMap) {
         StringBuilder sb = new StringBuilder();
-        sb.append("* MONEY");
+        sb.append("\n * MONEY");
         for (Map.Entry <VerifiedCoins, Integer> entry : originalMap.entrySet()) {
             sb.append(" " + entry.getKey() + " (" + entry.getKey().getValue() + ") " + ": " + entry.getValue() + " ");
         }
+        sb.append("*");
         return sb.toString();
     }
 

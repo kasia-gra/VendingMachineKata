@@ -1,4 +1,4 @@
-package com.codecool.vm;
+package com.codecool.vm.model;
 
 public enum Products {
 
