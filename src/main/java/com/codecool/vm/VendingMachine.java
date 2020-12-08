@@ -1,0 +1,209 @@
+package com.codecool.vm;
+
+import java.util.*;
+
+public class VendingMachine {
+
+    private Map<Products, Integer> availableProducts = new HashMap<>();
+    private Map<VerifiedCoins, Integer> userBudget = new HashMap<>();
+    private Map<VerifiedCoins, Integer> coinsInVendingMachine = new HashMap<>();
+    private Menu menu;
+    Helper helper = new Helper();
+
+    public VendingMachine(Menu menu) {
+        this.menu = menu;
+        addCoinsToVendingMachine(0,0,0);
+        addProductsToVendingMachine(0, 0, 0);
+    }
+
+    public void addCoinsToVendingMachine(int quarters, int dimes, int nickles){
+        coinsInVendingMachine.put(VerifiedCoins.QUARTER, quarters);
+        coinsInVendingMachine.put(VerifiedCoins.DIME, dimes);
+        coinsInVendingMachine.put(VerifiedCoins.NICKLE, nickles);
+    }
+    
+    public void addProductsToVendingMachine(int cola, int chips, int candy){
+        availableProducts.put(Products.COLA, cola);
+        availableProducts.put(Products.CHIPS, chips);
+        availableProducts.put(Products.CANDY, candy);
+    }
+    
+
+    private Map<VerifiedCoins, Integer> getChange(int change) {
+        Map<VerifiedCoins, Integer> currentSolution;
+        List<Map<VerifiedCoins, Integer>> solutionsForEachNumber = new ArrayList<>();
+        initializeListWithNulls(solutionsForEachNumber, change);
+        for (int partialChange = 1; partialChange < change + 1; partialChange++) {
+            for (VerifiedCoins coin : coinsInVendingMachine.keySet()) {
+                if (coin.getValue() <= partialChange) {
+                    currentSolution = consolidateResults(solutionsForEachNumber.get(partialChange - coin.getValue()), coin);
+                    getOptimalSolution(currentSolution, solutionsForEachNumber, partialChange);
+                }
+            }
+        }
+        return solutionsForEachNumber.get(change);
+    }
+
+    private void getOptimalSolution(Map<VerifiedCoins, Integer> currentSolution, List<Map<VerifiedCoins, Integer>> solutionsForEachNumber, int i) {
+        if (solutionsForEachNumber.get(i) != null && currentSolution != null) {
+            if (totalCoins(solutionsForEachNumber.get(i)) < totalCoins(currentSolution)) {
+                currentSolution = solutionsForEachNumber.get(i);
+            }
+        }
+        if (currentSolution != null) {
+            solutionsForEachNumber.set(i, currentSolution);
+        }
+    }
+
+
+    private int totalCoins(Map<VerifiedCoins, Integer> solution) {
+        return solution.values().stream().reduce(0, (consVal, val) -> consVal + val);
+    }
+
+    private Map<VerifiedCoins, Integer> consolidateResults(Map<VerifiedCoins, Integer> optimalSolution, VerifiedCoins coin) {
+        if (optimalSolution == null) {
+            return null;
+        }
+        Map<VerifiedCoins, Integer> currentSolution = new HashMap<>();
+        currentSolution.put(coin, 1);
+        helper.addMoney(currentSolution, optimalSolution);
+//        addTwoMaps(optimalSolution, coin, currentSolution);
+        if (!hasEnoughCoins(currentSolution)) return null;
+        return currentSolution;
+    }
+
+    private void addTwoMaps(Map<VerifiedCoins, Integer> optimalSolution, VerifiedCoins coin, Map<VerifiedCoins, Integer> currentSolution) {
+        for (Map.Entry<VerifiedCoins, Integer> entry : optimalSolution.entrySet()) {
+            if (currentSolution.containsKey(entry.getKey())) {
+                currentSolution.put(entry.getKey(), entry.getValue() + optimalSolution.get(coin));
+            } else
+                currentSolution.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+
+    private boolean hasEnoughCoins(Map<VerifiedCoins, Integer> optimalChange){
+        for (Map.Entry<VerifiedCoins, Integer> entry : optimalChange.entrySet()){
+            int coinsInUserBudget = (userBudget.containsKey(entry.getKey())) ? userBudget.get(entry.getKey()) : 0;
+            if (entry.getValue() > coinsInVendingMachine.get(entry.getKey()) + coinsInUserBudget) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private void initializeListWithNulls(List<Map<VerifiedCoins, Integer>> solutionsForEachNumber, int change) {
+        solutionsForEachNumber.add(0, new HashMap<>());
+        for (int index = 1; index <= change; index++) {
+            solutionsForEachNumber.add(index, null);
+        }
+    }
+
+
+    public Optional<VerifiedCoins> insertCoinsByName(String name) {
+        Coin coin = new Coin();
+        coin.assignSize(name);
+        return Arrays.stream(VerifiedCoins.values()).filter(val -> val.getWeight() == coin.weight && val.getRadius() == coin.getRadius())
+                .findFirst();
+    }
+
+    public Optional<VerifiedCoins> insertCoinsByParams(double weight, double radius) {
+        return Arrays.stream(VerifiedCoins.values()).filter(val -> val.getWeight() == weight && val.getRadius() == radius)
+                .findFirst();
+    }
+
+
+    public void addCoinsToBudget(String name) throws InterruptedException {
+        Optional<VerifiedCoins> insertedCoin = insertCoinsByName(name);
+        if (insertedCoin.isEmpty() || insertedCoin.get().equals(VerifiedCoins.PENNY)) {
+            menu.displayMessage("ERROR");
+        } else {
+            int coinsCount = (userBudget.containsKey(insertedCoin.get())) ? userBudget.get(insertedCoin.get()) : 0;
+            userBudget.put(insertedCoin.get(), coinsCount + 1);
+        }
+    }
+
+
+    public Map<VerifiedCoins, Integer> getUserBudget() {
+        return userBudget;
+    }
+
+    public int getBudgetValue() {
+        return userBudget.entrySet()
+                .stream()
+                .reduce(0, (partialResult, entry) -> partialResult + (entry.getKey().getValue() * entry.getValue()), Integer::sum);
+    }
+
+    public String formatBudgetValue() {
+        return convertCentsToDollars(getBudgetValue());
+    }
+
+    private String convertCentsToDollars(int priceInCents) {
+        return "$" + String.format("%.2f", priceInCents / 100.00);
+    }
+
+
+    public Map<VerifiedCoins, Integer> getCoinsInVendingMachine() {
+        return coinsInVendingMachine;
+    }
+
+
+    public void buyProduct(Products chosenProduct) {
+        if (availableProducts.get(chosenProduct) == 0) {
+            menu.displayMessage("SOLD OUT");
+            return;
+        }
+        if (getBudgetValue() < chosenProduct.getPrice()) {
+            menu.displayMessage("NOT ENOUGH BUDGET");
+            return;
+        }
+        int dueChange = getBudgetValue() - chosenProduct.getPrice();
+        Map<VerifiedCoins, Integer> calculatedChange = getChange(dueChange);
+        if (calculatedChange == null) {
+            menu.displayMessage("EXACT CHANGE ONLY");
+            return;
+        }
+        updateVendingMachineData(chosenProduct, calculatedChange);
+        menu.displayMessage("YOU BOUGHT " + chosenProduct.name() + " CHANGE " + calculatedChange + " BUDGET " + userBudget + " IN MACHINE " + coinsInVendingMachine);
+    }
+
+
+    private void updateVendingMachineData(Products chosenProduct, Map<VerifiedCoins, Integer> calculatedChange) {
+        helper.addMoney(coinsInVendingMachine, userBudget);
+        helper.removeMoney(coinsInVendingMachine, calculatedChange);
+        helper.clearMap(userBudget);
+        takeOutProduct(chosenProduct);
+    }
+
+
+    private void takeOutProduct(Products chosenProduct) {
+        int currentProductQty = availableProducts.get(chosenProduct);
+        availableProducts.put(chosenProduct, currentProductQty - 1);
+    }
+
+
+    public void showMenu(Scanner scanner) throws InterruptedException {
+        while (true) {
+            menu.displayMessage("INSERT COINS");
+            String userChoice = menu.getCoin(scanner);
+            if (userChoice.equals("B")) {
+                Products chosenProduct = menu.chooseProduct(scanner);
+                if (availableProducts.get(chosenProduct) == 0) {
+                    menu.displayMessage("SOLD OUT");
+                } else {
+                    buyProduct(chosenProduct);
+                }
+            }
+            else if (userChoice.equals("R")){
+                helper.clearMap(userBudget);
+            }
+            else {
+                addCoinsToBudget(userChoice);
+                menu.displayMessage(formatBudgetValue());
+            }
+        }
+    }
+
+
+}
