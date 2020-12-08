@@ -1,5 +1,6 @@
 package com.codecool.vm;
 
+import java.io.ObjectStreamException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,8 +23,27 @@ public class Helper {
         }
     }
 
-    public void clearMap(Map<VerifiedCoins, Integer> map){
-        map = new HashMap<>();
+
+    public String convertCentsToDollars(int priceInCents) {
+        return "$" + String.format("%.2f", priceInCents / 100.00);
+    }
+
+    public String formatProductsDisplay(Map<Products, Integer> originalMap) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("* PRODUCTS: ");
+        for (Map.Entry <Products, Integer> entry : originalMap.entrySet()) {
+            sb.append(" " +entry.getKey() + ": " + entry.getValue() + " ");
+        }
+        return sb.toString();
+    }
+
+    public String formatMoneyDisplay(Map<VerifiedCoins, Integer> originalMap) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("* MONEY");
+        for (Map.Entry <VerifiedCoins, Integer> entry : originalMap.entrySet()) {
+            sb.append(" " + entry.getKey() + " (" + entry.getKey().getValue() + ") " + ": " + entry.getValue() + " ");
+        }
+        return sb.toString();
     }
 
 }

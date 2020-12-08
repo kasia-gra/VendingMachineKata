@@ -27,9 +27,54 @@ public class VendingMachine {
         availableProducts.put(Products.CHIPS, chips);
         availableProducts.put(Products.CANDY, candy);
     }
-    
+
+
+    public void showMenu(Scanner scanner) {
+        while (true) {
+            menu.displayMessage("INSERT COINS | " + formatBudgetValue() + " | " + currentState());
+            String userChoice = menu.getCoin(scanner);
+            if (userChoice.equals("B")) {
+                Products chosenProduct = menu.chooseProduct(scanner);
+                if (availableProducts.get(chosenProduct) == 0) {
+                    menu.displayMessage("SOLD OUT");
+                } else {
+                    buyProduct(chosenProduct);
+                }
+            }
+            else if (userChoice.equals("R")){
+                menu.displayMessage("RETURNING | " + formatBudgetValue());
+                userBudget = new HashMap<>();
+            }
+            else {
+                addCoinsToBudget(userChoice);
+            }
+        }
+    }
+
+
+    public void buyProduct(Products chosenProduct) {
+        if (availableProducts.get(chosenProduct) == 0) {
+            menu.displayMessage("SOLD OUT");
+            return;
+        }
+        if (getBudgetValue() < chosenProduct.getPrice()) {
+            menu.displayMessage("NOT ENOUGH BUDGET");
+            return;
+        }
+        int dueChange = getBudgetValue() - chosenProduct.getPrice();
+        Map<VerifiedCoins, Integer> calculatedChange = getChange(dueChange);
+        if (calculatedChange == null) {
+            menu.displayMessage("EXACT CHANGE ONLY");
+            return;
+        }
+        updateVendingMachineData(chosenProduct, calculatedChange);
+    }
+
 
     private Map<VerifiedCoins, Integer> getChange(int change) {
+        if (change == 0) {
+            return new HashMap<>();
+        }
         Map<VerifiedCoins, Integer> currentSolution;
         List<Map<VerifiedCoins, Integer>> solutionsForEachNumber = new ArrayList<>();
         initializeListWithNulls(solutionsForEachNumber, change);
@@ -67,18 +112,8 @@ public class VendingMachine {
         Map<VerifiedCoins, Integer> currentSolution = new HashMap<>();
         currentSolution.put(coin, 1);
         helper.addMoney(currentSolution, optimalSolution);
-//        addTwoMaps(optimalSolution, coin, currentSolution);
         if (!hasEnoughCoins(currentSolution)) return null;
         return currentSolution;
-    }
-
-    private void addTwoMaps(Map<VerifiedCoins, Integer> optimalSolution, VerifiedCoins coin, Map<VerifiedCoins, Integer> currentSolution) {
-        for (Map.Entry<VerifiedCoins, Integer> entry : optimalSolution.entrySet()) {
-            if (currentSolution.containsKey(entry.getKey())) {
-                currentSolution.put(entry.getKey(), entry.getValue() + optimalSolution.get(coin));
-            } else
-                currentSolution.put(entry.getKey(), entry.getValue());
-        }
     }
 
 
@@ -104,17 +139,12 @@ public class VendingMachine {
     public Optional<VerifiedCoins> insertCoinsByName(String name) {
         Coin coin = new Coin();
         coin.assignSize(name);
-        return Arrays.stream(VerifiedCoins.values()).filter(val -> val.getWeight() == coin.weight && val.getRadius() == coin.getRadius())
-                .findFirst();
-    }
-
-    public Optional<VerifiedCoins> insertCoinsByParams(double weight, double radius) {
-        return Arrays.stream(VerifiedCoins.values()).filter(val -> val.getWeight() == weight && val.getRadius() == radius)
+        return Arrays.stream(VerifiedCoins.values()).filter(val -> val.getWeight() == coin.getWeight() && val.getRadius() == coin.getRadius())
                 .findFirst();
     }
 
 
-    public void addCoinsToBudget(String name) throws InterruptedException {
+    public void addCoinsToBudget(String name)  {
         Optional<VerifiedCoins> insertedCoin = insertCoinsByName(name);
         if (insertedCoin.isEmpty() || insertedCoin.get().equals(VerifiedCoins.PENNY)) {
             menu.displayMessage("ERROR");
@@ -135,44 +165,11 @@ public class VendingMachine {
                 .reduce(0, (partialResult, entry) -> partialResult + (entry.getKey().getValue() * entry.getValue()), Integer::sum);
     }
 
-    public String formatBudgetValue() {
-        return convertCentsToDollars(getBudgetValue());
-    }
-
-    private String convertCentsToDollars(int priceInCents) {
-        return "$" + String.format("%.2f", priceInCents / 100.00);
-    }
-
-
-    public Map<VerifiedCoins, Integer> getCoinsInVendingMachine() {
-        return coinsInVendingMachine;
-    }
-
-
-    public void buyProduct(Products chosenProduct) {
-        if (availableProducts.get(chosenProduct) == 0) {
-            menu.displayMessage("SOLD OUT");
-            return;
-        }
-        if (getBudgetValue() < chosenProduct.getPrice()) {
-            menu.displayMessage("NOT ENOUGH BUDGET");
-            return;
-        }
-        int dueChange = getBudgetValue() - chosenProduct.getPrice();
-        Map<VerifiedCoins, Integer> calculatedChange = getChange(dueChange);
-        if (calculatedChange == null) {
-            menu.displayMessage("EXACT CHANGE ONLY");
-            return;
-        }
-        updateVendingMachineData(chosenProduct, calculatedChange);
-        menu.displayMessage("YOU BOUGHT " + chosenProduct.name() + " CHANGE " + calculatedChange + " BUDGET " + userBudget + " IN MACHINE " + coinsInVendingMachine);
-    }
-
 
     private void updateVendingMachineData(Products chosenProduct, Map<VerifiedCoins, Integer> calculatedChange) {
         helper.addMoney(coinsInVendingMachine, userBudget);
         helper.removeMoney(coinsInVendingMachine, calculatedChange);
-        helper.clearMap(userBudget);
+        userBudget = new HashMap<>();
         takeOutProduct(chosenProduct);
     }
 
@@ -182,28 +179,12 @@ public class VendingMachine {
         availableProducts.put(chosenProduct, currentProductQty - 1);
     }
 
-
-    public void showMenu(Scanner scanner) throws InterruptedException {
-        while (true) {
-            menu.displayMessage("INSERT COINS");
-            String userChoice = menu.getCoin(scanner);
-            if (userChoice.equals("B")) {
-                Products chosenProduct = menu.chooseProduct(scanner);
-                if (availableProducts.get(chosenProduct) == 0) {
-                    menu.displayMessage("SOLD OUT");
-                } else {
-                    buyProduct(chosenProduct);
-                }
-            }
-            else if (userChoice.equals("R")){
-                helper.clearMap(userBudget);
-            }
-            else {
-                addCoinsToBudget(userChoice);
-                menu.displayMessage(formatBudgetValue());
-            }
-        }
+    public String formatBudgetValue() {
+        return helper.convertCentsToDollars(getBudgetValue());
     }
 
+    private String currentState(){
+        return  helper.formatProductsDisplay(availableProducts) +  helper.formatMoneyDisplay(coinsInVendingMachine);
+    }
 
 }

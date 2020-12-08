@@ -2,10 +2,10 @@ package com.codecool.vm;
 
 public class Coin {
 
-    Coin(double weight, double radius){
-        this.weight = weight;
-        this.radius = radius;
-    }
+    private double weight;
+
+    private double radius;
+
 
     Coin(){
 
@@ -14,13 +14,9 @@ public class Coin {
     public double getWeight() {
         return weight;
     }
-
     public double getRadius() {
         return radius;
     }
-    double weight;
-
-    double radius;
 
 
     public void assignSize(String name){
